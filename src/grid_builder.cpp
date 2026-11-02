@@ -75,28 +75,12 @@ static void generate_dummy_grid(int nx, int ny, int nz, std::vector<float>& vert
     }
 }
 
-// основной метод построения CPG сетки
-std::vector<float> GridBuilder::build_mesh_grid(
-    const std::vector<int>& dims,
-    const std::vector<float>& coords,
-    const std::vector<float>& zcorn
-){
-    if (dims.size() < 3) return {};
-    // извлекаем размеры сетки
-    int nx = dims[0];
-    int ny = dims[1];
-    int nz = dims[2];
-    
-    std::vector<float> vertices;
-
-    // если COORD или ZCORN отсутствуют, откатываемся на чистый параметрический бокс
-    if (is_data_empty(coords, zcorn)) {
-        std::cout << "[GridBuilder] COORD or ZCORN is empty. Using parametric dummy grid." << std::endl;
-        generate_dummy_grid(nx, ny, nz, vertices);
-        return vertices;
-    }
-
-    std::cout << "[GridBuilder] Building CPG mesh for grid: " << nx << " x " << ny << " x " << nz << std::endl;
+static void generate_grid(int nx, int ny, int nz, 
+                        std::vector<float>& vertices,    
+                        const std::vector<int>& dims,
+                        const std::vector<float>& coords,
+                        const std::vector<float>& zcorn
+){    
     int nx_plus_1 = nx + 1;
     int total_cells = nx * ny * nz;
     vertices.reserve(total_cells * 24); // 8 вершин * 3 координаты = 24 значения на ячейку
@@ -139,6 +123,31 @@ std::vector<float> GridBuilder::build_mesh_grid(
             }
         }
     }
+}
 
+// основной метод построения CPG сетки
+std::vector<float> GridBuilder::build_mesh_grid(
+    const std::vector<int>& dims,
+    const std::vector<float>& coords,
+    const std::vector<float>& zcorn
+){
+    if (dims.size() < 3) return {};
+    // извлекаем размеры сетки
+    int nx = dims[0];
+    int ny = dims[1];
+    int nz = dims[2];
+    
+    std::vector<float> vertices;
+
+    // если COORD или ZCORN отсутствуют, откатываемся на чистый параметрический бокс
+    if (is_data_empty(coords, zcorn)) {
+        std::cout << "[GridBuilder] COORD or ZCORN is empty. Using parametric dummy grid." << std::endl;
+        generate_dummy_grid(nx, ny, nz, vertices); //пустая сетка, генерируем параметрический бокс
+        return vertices;
+    }else{
+        generate_grid(nx, ny, nz, vertices, dims, coords, zcorn); //генерируем сетку по данным COORD и ZCORN
+    }
+
+    std::cout << "[GridBuilder] Building CPG mesh for grid: " << nx << " x " << ny << " x " << nz << std::endl;
     return vertices;
 }
