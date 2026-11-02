@@ -37,18 +37,18 @@ std::vector<int> Parser::get_specgrid() const {
     std::vector<int> dims;
     
     while (ss >> token) {
-    if (token == "/") break;
-    if (token.rfind("--", 0) == 0) continue; // пропускаем комментарии
+        if (token == "/") break;
+        if (token.rfind("--", 0) == 0) continue; // пропускаем комментарии
 
-    try {
-        dims.push_back(std::stoi(token)); // преобразуем строку в число и добавляем в вектор
-        if (dims.size() == 3) break; // если получили три числа (x,y,z), выходим из цикла
-    }   
-    catch(...){}
-
-    return dims; // возвращаем вектор с размерами сетки
+        try {
+            dims.push_back(std::stoi(token)); // преобразуем строку в число и добавляем в вектор
+            if (dims.size() == 3) break; // если получили три числа (x,y,z), выходим из цикла
+        }   
+        catch(...){}
     }
+    return dims; // возвращаем вектор с размерами сетки
 }
+
 std::vector<float> Parser::parse_keyword(const std::string& keyword) const{
     std::vector<float> data;
     size_t pos = file_content.find(keyword);
@@ -58,7 +58,7 @@ std::vector<float> Parser::parse_keyword(const std::string& keyword) const{
     std::string token;
     while (ss >> token){
         if(token == "/") break; // если встретили "/", выходим из цикла
-        if(token[0] == '-'){
+        if(token[0] == '--'){
             std::string dummy;
             ss >> dummy; // пропускаем комментарий
             continue;
