@@ -7,14 +7,18 @@
 class Parser {
     public:
     //explict - запрет на неявное преобразование(сак май эс, пайтон)
+    //сам вызов парсера - его конструктор с указанием пути до файла,который нужно распарсить
     explicit Parser(const std::string file_path);
 
-    bool parse_specgrid(int &nx, int& ny, int& nz); //главный метод: парсим файл и изменяем значения nx, ny, nz по ссылке
-    std::vector<float> parse_keyword_data(const std::string& keyword); //метод чтения массивов с RLE-декомпрессией 
+    bool load(); //метод загрузки файла в память
+    
+    std::vector<int> get_specgrid() const; /*возвращет вектор с размерами сетки {nx, ny, nz} или пустой вектор
+    если не удалось прочитать файл*/
 
+    std::vector<float> parse_keyword(const std::string& keyword) const; /*возвращает массив чисел для любого ключевого слова
+    с учетом RLE-декомпрессии*/
     private:
     std::string file_path;
     std::string file_content;
 
-    int read_file(); //метод чтения файла в строку
 };
