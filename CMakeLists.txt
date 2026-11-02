@@ -14,4 +14,5 @@ pybind11_add_module(grdecl_core
     src/bindings.cpp 
     src/parser.cpp
     src/grid_builder.cpp
+    src/obj_exporter.cpp
 )
