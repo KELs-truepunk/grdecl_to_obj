@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+
 /*запуск объекта парсера с указанием пути к файлу
 std::move() здесь перемещает объект, чтобы избежать лишнего копирования
 */
@@ -46,4 +47,36 @@ std::vector<int> Parser::get_specgrid() const {
     catch(...){}
 
     return dims; // возвращаем вектор с размерами сетки
+    }
+}
+std::vector<float> Parser::parse_keyword(const std::string& keyword) const{
+    std::vector<float> data;
+    size_t pos = file_content.find(keyword);
+    if (pos == std::string::npos) return data; // возвращаем пустой
+    
+    std::stringstream ss(file_content.substr(pos + keyword.length())); // создаем поток для чтения чисел после ключевого слова
+    std::string token;
+    while (ss >> token){
+        if(token == "/") break; // если встретили "/", выходим из цикла
+        if(token[0] == '-'){
+            std::string dummy;
+            ss >> dummy; // пропускаем комментарий
+            continue;
+        }
+        size_t star_pos = token.find('*');
+        if(star_pos != std::string::npos){
+            int cnt = std::stoi(token.substr(0, star_pos)); // количество повторений
+            float val = std::stof(token.substr(star_pos + 1)); // значение
+            data.insert(data.end(), cnt, val); // добавляем значение cnt раз в вектор
+        }else{
+            try{
+                data.push_back(std::stof(token)); // преобразуем строку в число и добавляем в вектор
+            }
+            catch(...){
+                continue; // если не удалось преобразовать, пропускаем
+            }
+        }
+    }
+    
+    return data;
 }
