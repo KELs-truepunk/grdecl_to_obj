@@ -58,7 +58,7 @@ std::vector<float> Parser::parse_keyword(const std::string& keyword) const{
     std::string token;
     while (ss >> token){
         if(token == "/") break; // если встретили "/", выходим из цикла
-        if(token[0] == '--'){
+        if(token.rfind("--", 0) == 0){ // если строка начинается с "--", это комментарий
             std::string dummy;
             ss >> dummy; // пропускаем комментарий
             continue;
