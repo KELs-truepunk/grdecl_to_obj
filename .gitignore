@@ -1,0 +1,25 @@
+# Build directories
+build/
+CMakeFiles/
+_deps/
+
+# CMake temporary files
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Compiled binaries & modules
+*.so
+*.pyd
+*.dll
+*.dylib
+
+# Python & Virtual Environment
+venv/
+__pycache__/
+*.pyc
+
+# IDE specific
+.vscode/
+.idea/
