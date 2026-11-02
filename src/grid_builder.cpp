@@ -6,7 +6,7 @@ std::vector<float> GridBuilder::build_mesh_grid(
     const std::vector<float>& coords,
     const std::vector<float>& zcoorn
 ){
-    if(dims.size() < 3) return;
+    if(dims.size() < 3) return {};
     int nx = dims[0];
     int ny = dims[1];
     int nz = dims[2];
