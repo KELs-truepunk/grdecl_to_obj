@@ -10,4 +10,5 @@ PYBIND11_MODULE(grdecl_core, m) {
         .def("load", &Parser::load)                    // метод загрузки файла
         .def("get_specgrid", &Parser::get_specgrid)    // метод получения размеров сетки
         .def("parse_keyword", &Parser::parse_keyword); // метод парсинга ключевого слова
+        .def_static("build_mesh_grid", &GridBuilder::build_mesh_grid); // статический метод построения сетки
 }
