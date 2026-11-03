@@ -17,4 +17,6 @@ PYBIND11_MODULE(grdecl_core, m) {
         .def_static("build_mesh_grid", &GridBuilder::build_mesh_grid); // статический метод построения сетки
     py::class_<ObjExporter>(m, "ObjExporter")
         .def_static("export_to_obj", &ObjExporter::export_to_obj); // статический метод экспорта в формат OBJ
+    py::class_<StlExporter>(m, "StlExporter")
+        .def_static("export_to_stl", &StlExporter::export_to_stl); // статический метод экспорта в формат STL
 }
