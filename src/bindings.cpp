@@ -4,6 +4,7 @@
 #include "parser.hpp"
 #include "grid_builder.hpp"
 #include "obj_exporter.hpp"
+#include "stl_exporter.hpp"
 namespace py = pybind11;
 //пайбинд11 позволяет сделать ручки моих си++ классов в питоне
 PYBIND11_MODULE(grdecl_core, m) {
