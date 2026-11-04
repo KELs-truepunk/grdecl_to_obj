@@ -28,7 +28,8 @@ static Vector3 compute_normal(const Vector3& p1, const Vector3& p2, const Vector
 }
 
 
-bool StlExporter::export_to_stl(const std::string& filepath, const std::vector<float>& vertices) {
+bool StlExporter::export_to_stl(const std::string& filepath,
+    std::vector<float>& vertices) {
     // Проверяем, что вектор вершин не пуст и его размер кратен 24 
     if (vertices.empty() || vertices.size() % 24 != 0) {
         std::cerr << "[-] StlExporter: Invalid or empty vertices vector." << std::endl;
