@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(grdcl_core LANGUAGES CXX)
+project(grdecl_to_obj LANGUAGES CXX)
 
 if(POLICY CMP0148)
     cmake_policy(SET CMP0148 NEW)
@@ -15,4 +15,5 @@ pybind11_add_module(grdecl_core
     src/parser.cpp
     src/grid_builder.cpp
     src/obj_exporter.cpp
+    src/stl_exporter.cpp
 )
