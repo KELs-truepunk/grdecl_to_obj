@@ -1,10 +1,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 // подключаем заголовочные файлы для классов Parser, GridBuilder и ObjExporter
-#include "parser.hpp"
-#include "grid_builder.hpp"
-#include "obj_exporter.hpp"
-#include "stl_exporter.hpp"
+#include "parser/parser.hpp"
+#include "grid_builder/grid_builder.hpp"
+#include "obj_exporter/obj_exporter.hpp"
+#include "stl_exporter/stl_exporter.hpp"
 namespace py = pybind11;
 //пайбинд11 позволяет сделать ручки моих си++ классов в питоне
 PYBIND11_MODULE(grdecl_core, m) {
