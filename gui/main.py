@@ -36,9 +36,14 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.btn_load)
 
         # Кнопка экспорта в OBJ
-        self.btn_export = QPushButton("Экспортировать в .OBJ", self)
-        self.btn_export.clicked.connect(self.export_obj_file)
-        layout.addWidget(self.btn_export)
+        self.btn_export_obj = QPushButton("Экспортировать в .OBJ", self)
+        self.btn_export_obj.clicked.connect(self.export_obj_file)
+        layout.addWidget(self.btn_export_obj)
+
+        # Кнопка экспорта в STL
+        self.btn_export_stl = QPushButton("Экспортировать в .STL", self)
+        self.btn_export_stl.clicked.connect(self.export_stl_file)
+        layout.addWidget(self.btn_export_stl)
 
         # 3D-виджет от PyVista (встроенный в PyQt)
         self.plotter = QtInteractor(self)
@@ -132,6 +137,30 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "Успех", f"Модель успешно сохранена:\n{file_path}")
             else:
                 QMessageBox.critical(self, "Ошибка", "Не удалось записать .obj файл.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка экспорта: {str(e)}")
+
+    def export_stl_file(self):
+        if not self.current_dims:
+            QMessageBox.warning(self, "Предупреждение", "Сначала откройте валидный .grdecl файл!")
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Сохранить модель как STL", "", "STL (*.stl);;All Files (*)"
+        )
+        if not file_path:
+            return
+
+        try:
+            raw_vertices = grdecl_core.GridBuilder.build_mesh_grid(
+                self.current_dims, self.current_coords, self.current_zcorn
+            )
+            success = grdecl_core.StlExporter.export_to_stl(file_path, raw_vertices)
+
+            if success:
+                QMessageBox.information(self, "Успех", f"Модель успешно сохранена:\n{file_path}")
+            else:
+                QMessageBox.critical(self, "Ошибка", "Не удалось записать .stl файл.")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Ошибка экспорта: {str(e)}")
 
