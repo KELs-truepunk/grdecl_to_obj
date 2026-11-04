@@ -12,8 +12,8 @@ find_package(pybind11 REQUIRED)
 
 pybind11_add_module(grdecl_core 
     src/bindings.cpp 
-    src/parser.cpp
-    src/grid_builder.cpp
-    src/obj_exporter.cpp
-    src/stl_exporter.cpp
+    src/parser/parser.cpp
+    src/grid_builder/grid_builder.cpp
+    src/obj_exporter/obj_exporter.cpp
+    src/stl_exporter/stl_exporter.cpp
 )
