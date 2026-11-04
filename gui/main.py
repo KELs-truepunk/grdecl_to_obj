@@ -2,7 +2,7 @@
 # даже плюсы не очень, а проект делать надо (может потом на ГТК4 сделаю, но пока на PyQt6)
 #ядро на си++ писал почти сам, иногда подглядывая к нейронкам(я все равно не вайбкодер)
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QFileDialog, QMessageBox
 from pyvistaqt import QtInteractor
 import pyvista as pv
 import numpy as np
@@ -28,26 +28,31 @@ class MainWindow(QMainWindow):
         # Главный виджет и компоновка
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
+        layout = QHBoxLayout(central_widget)
+        sidebar = QWidget()
+        sidebar.setFixedWidth(250)
+        sidebar_layout = QVBoxLayout(sidebar)
 
         # Кнопка загрузки файла
-        self.btn_load = QPushButton("Открыть .GRDECL файл", self)
+        self.btn_load = QPushButton("Открыть .GRDECL файл", sidebar)
         self.btn_load.clicked.connect(self.open_file_dialog)
-        layout.addWidget(self.btn_load)
+        sidebar_layout.addWidget(self.btn_load)
 
         # Кнопка экспорта в OBJ
-        self.btn_export_obj = QPushButton("Экспортировать в .OBJ", self)
+        self.btn_export_obj = QPushButton("Экспортировать в .OBJ", sidebar)
         self.btn_export_obj.clicked.connect(self.export_obj_file)
-        layout.addWidget(self.btn_export_obj)
+        sidebar_layout.addWidget(self.btn_export_obj)
 
         # Кнопка экспорта в STL
-        self.btn_export_stl = QPushButton("Экспортировать в .STL", self)
+        self.btn_export_stl = QPushButton("Экспортировать в .STL", sidebar)
         self.btn_export_stl.clicked.connect(self.export_stl_file)
-        layout.addWidget(self.btn_export_stl)
+        sidebar_layout.addWidget(self.btn_export_stl)
+        sidebar_layout.addStretch()
+        layout.addWidget(sidebar)
 
         # 3D-виджет от PyVista (встроенный в PyQt)
         self.plotter = QtInteractor(self)
-        layout.addWidget(self.plotter.interactor)
+        layout.addWidget(self.plotter.interactor, 1)
 
         # Добавим приветственную 3D-сетку, чтобы сцена не была пустой
         self.show_welcome_box()
@@ -55,7 +60,7 @@ class MainWindow(QMainWindow):
     def show_welcome_box(self):
         box = pv.Box(bounds=(0, 1, 0, 1, 0, 1))
         self.plotter.add_mesh(box, color="lightgray", show_edges=True)
-        self.plotter.add_text("Load a .GRDECL file to render reservoir", font_size=12)
+        self.plotter.add_axes()
         self.plotter.reset_camera()
 
     def open_file_dialog(self):
@@ -106,6 +111,7 @@ class MainWindow(QMainWindow):
 
                 self.plotter.clear()
                 self.plotter.add_mesh(grid, show_edges=True, color="lightblue", scalars=None)
+                self.plotter.add_axes()
                 self.plotter.add_text(f"Grid: {nx} x {ny} x {nz} ({num_cells} cells)", font_size=12)
                 self.plotter.reset_camera()
 
