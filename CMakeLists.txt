@@ -16,4 +16,5 @@ pybind11_add_module(grdecl_core
     src/grid_builder/grid_builder.cpp
     src/obj_exporter/obj_exporter.cpp
     src/stl_exporter/stl_exporter.cpp
+    src/ply_exporter/ply_exporter.cpp
 )
