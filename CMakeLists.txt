@@ -17,4 +17,5 @@ pybind11_add_module(grdecl_core
     src/obj_exporter/obj_exporter.cpp
     src/stl_exporter/stl_exporter.cpp
     src/ply_exporter/ply_exporter.cpp
+    src/vtu_exporter/vtu_exporter.cpp
 )
