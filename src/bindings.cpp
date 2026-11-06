@@ -5,6 +5,8 @@
 #include "grid_builder/grid_builder.hpp"
 #include "obj_exporter/obj_exporter.hpp"
 #include "stl_exporter/stl_exporter.hpp"
+#include "ply_exporter/ply_exporter.hpp"
+
 namespace py = pybind11;
 //пайбинд11 позволяет сделать ручки моих си++ классов в питоне
 PYBIND11_MODULE(grdecl_core, m) {
@@ -20,4 +22,6 @@ PYBIND11_MODULE(grdecl_core, m) {
         .def_static("export_to_obj", &ObjExporter::export_to_obj); // статический метод экспорта в формат OBJ
     py::class_<StlExporter>(m, "StlExporter")
         .def_static("export_to_stl", &StlExporter::export_to_stl); // статический метод экспорта в формат STL
+    py::class_<PlyExporter>(m, "PlyExporter")
+        .def_static("export_to_ply", &PlyExporter::export_to_ply); // статический метод экспорта в формат PLY
 }
