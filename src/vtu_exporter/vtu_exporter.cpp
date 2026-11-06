@@ -23,7 +23,7 @@ bool VtuExporter::export_to_vtu(const std::string& filepath,
     file << "    <Piece NumberOfPoints=\"" << num_points
          << "\" NumberOfCells=\"" << num_cells << "\">\n";
 
-    // -------- Points --------
+    // Точки
     file << "      <Points>\n";
     file << "        <DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n";
     for (size_t i = 0; i < vertices.size(); i += 3) {
@@ -33,7 +33,7 @@ bool VtuExporter::export_to_vtu(const std::string& filepath,
     file << "        </DataArray>\n";
     file << "      </Points>\n";
 
-    // -------- Cells --------
+    // Ячейки
     file << "      <Cells>\n";
 
     file << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n";
