@@ -27,4 +27,6 @@ PYBIND11_MODULE(grdecl_core, m) {
         .def_static("export_to_ply", &PlyExporter::export_to_ply); // статический метод экспорта в формат PLY
     py::class_<VtuExporter>(m, "VtuExporter")
         .def_static("export_to_vtu", &VtuExporter::export_to_vtu); // статический метод экспорта в формат VTU
+    py::class_<VtkExporter>(m, "VtkExporter")
+        .def_static("export_to_vtk", &VtkExporter::export_to_vtk); // статический метод экспорта в формат VTK
 }
