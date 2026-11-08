@@ -19,7 +19,12 @@ PYBIND11_MODULE(grdecl_core, m) {
         .def("parse_keyword", &Parser::parse_keyword); // метод парсинга ключевого слова
         
     py::class_<GridBuilder>(m, "GridBuilder")
-        .def_static("build_mesh_grid", &GridBuilder::build_mesh_grid); // статический метод построения сетки
+        .def_static("build_mesh_grid", &GridBuilder::build_mesh_grid,
+                    py::arg("dims"), 
+                    py::arg("coords"), 
+                    py::arg("zcorn"), 
+                    py::arg("actnum") = std::vector<float>{}, 
+                    py::arg("z_scale") = 1.0f);                // статический метод построения сетки
     py::class_<ObjExporter>(m, "ObjExporter")
         .def_static("export_to_obj", &ObjExporter::export_to_obj); // статический метод экспорта в формат OBJ
     py::class_<StlExporter>(m, "StlExporter")
