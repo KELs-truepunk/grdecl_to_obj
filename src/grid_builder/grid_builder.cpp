@@ -1,17 +1,13 @@
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 #include "grid_builder.hpp"
 
 // Структура для удобной работы с точками в пространстве
-struct Point3D {
-    float x, y, z;
-};
+struct Point3D {float x, y, z;};
 
 // Структура вертикальной колонки (pillar) в сетке CPG
-struct Pillar {
-    Point3D top;
-    Point3D bot;
-};
+struct Pillar {Point3D top; Point3D bot;};
 
 // Проверка на наличие сырых данных
 static bool is_data_empty(const std::vector<float>& coords, const std::vector<float>& zcorn) {
@@ -77,44 +73,47 @@ static void generate_dummy_grid(int nx, int ny, int nz, std::vector<float>& vert
 
 static void generate_grid(int nx, int ny, int nz, 
                         std::vector<float>& vertices,    
-                        const std::vector<int>& dims,
                         const std::vector<float>& coords,
-                        const std::vector<float>& zcorn
-){    
+                        const std::vector<float>& zcorn,
+                        const std::vector<float>& actnum)
+{    
     int nx_plus_1 = nx + 1;
     int total_cells = nx * ny * nz;
-    vertices.reserve(total_cells * 24); // 8 вершин * 3 координаты = 24 значения на ячейку
-    // Проходим по всем ячейкам сетки
+    vertices.reserve(total_cells * 24);
+    
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
             for (int i = 0; i < nx; ++i) {
-                // Индекс ячейки в массиве ZCORN (по 8 глубин на ячейку)
-                int z_idx = ((k * ny + j) * nx + i) * 8;
+                
+                // --- ПРОВЕРКА ACTNUM ---
+                int cell_idx = (k * ny + j) * nx + i;
+                if (!actnum.empty() && cell_idx < actnum.size()) {
+                    // Если ячейка неактивна (0), пропускаем её
+                    if (actnum[cell_idx] < 0.5f) continue; 
+                }
 
-                // Проверка вылета за границы массива ZCORN
+                int z_idx = cell_idx * 8;
+
                 if (z_idx + 7 >= static_cast<int>(zcorn.size())) {
                     continue;
                 }
 
-                // 4 угловые колонки ячейки в плане
                 Pillar p00 = get_pillar(i,     j,     nx_plus_1, coords);
                 Pillar p10 = get_pillar(i + 1, j,     nx_plus_1, coords);
                 Pillar p11 = get_pillar(i + 1, j + 1, nx_plus_1, coords);
                 Pillar p01 = get_pillar(i,     j + 1, nx_plus_1, coords);
 
-                // Интерполяция 8 вершин гексаэдра по глубинам из ZCORN
                 Point3D v[8];
-                v[0] = interpolate_pillar_at_z(p00, zcorn[z_idx + 0]); // Верх NW
-                v[1] = interpolate_pillar_at_z(p10, zcorn[z_idx + 1]); // Верх NE
-                v[2] = interpolate_pillar_at_z(p11, zcorn[z_idx + 2]); // Верх SE
-                v[3] = interpolate_pillar_at_z(p01, zcorn[z_idx + 3]); // Верх SW
+                v[0] = interpolate_pillar_at_z(p00, zcorn[z_idx + 0]);
+                v[1] = interpolate_pillar_at_z(p10, zcorn[z_idx + 1]);
+                v[2] = interpolate_pillar_at_z(p11, zcorn[z_idx + 2]);
+                v[3] = interpolate_pillar_at_z(p01, zcorn[z_idx + 3]);
 
-                v[4] = interpolate_pillar_at_z(p00, zcorn[z_idx + 4]); // Низ NW
-                v[5] = interpolate_pillar_at_z(p10, zcorn[z_idx + 5]); // Низ NE
-                v[6] = interpolate_pillar_at_z(p11, zcorn[z_idx + 6]); // Низ SE
-                v[7] = interpolate_pillar_at_z(p01, zcorn[z_idx + 7]); // Низ SW
+                v[4] = interpolate_pillar_at_z(p00, zcorn[z_idx + 4]);
+                v[5] = interpolate_pillar_at_z(p10, zcorn[z_idx + 5]);
+                v[6] = interpolate_pillar_at_z(p11, zcorn[z_idx + 6]);
+                v[7] = interpolate_pillar_at_z(p01, zcorn[z_idx + 7]);
 
-                // Записываем координаты вершин в плоский вектор
                 for (int idx = 0; idx < 8; ++idx) {
                     vertices.push_back(v[idx].x);
                     vertices.push_back(v[idx].y);
@@ -124,30 +123,34 @@ static void generate_grid(int nx, int ny, int nz,
         }
     }
 }
-
 // основной метод построения CPG сетки
 std::vector<float> GridBuilder::build_mesh_grid(
     const std::vector<int>& dims,
     const std::vector<float>& coords,
-    const std::vector<float>& zcorn
+    const std::vector<float>& zcorn,
+    const std::vector<float>& actnum, 
+    float z_scale                     
 ){
+    //проверка на корректные данные
     if (dims.size() < 3) return {};
-    // извлекаем размеры сетки
-    int nx = dims[0];
-    int ny = dims[1];
-    int nz = dims[2];
+    int nx = dims[0], ny = dims[1], nz = dims[2];
     
     std::vector<float> vertices;
-
-    // если COORD или ZCORN отсутствуют, откатываемся на чистый параметрический бокс
+    //если пусто, то отдаем пустую сетку
     if (is_data_empty(coords, zcorn)) {
-        std::cout << "[GridBuilder] COORD or ZCORN is empty. Using parametric dummy grid." << std::endl;
-        generate_dummy_grid(nx, ny, nz, vertices); //пустая сетка, генерируем параметрический бокс
-        return vertices;
-    }else{
-        generate_grid(nx, ny, nz, vertices, dims, coords, zcorn); //генерируем сетку по данным COORD и ZCORN
+        std::cout << "[GridBuilder] COORD or ZCORN is empty. Using dummy grid." << std::endl;
+        generate_dummy_grid(nx, ny, nz, vertices);
+    } else {
+        generate_grid(nx, ny, nz, vertices, coords, zcorn, actnum);
     }
-
-    std::cout << "[GridBuilder] Building CPG mesh for grid: " << nx << " x " << ny << " x " << nz << std::endl;
+    //применяем скейл по оси z
+    if (z_scale != 1.0f) {
+        for (size_t i = 2; i < vertices.size(); i += 3) {
+            vertices[i] *= z_scale;
+        }
+    }
+    //сообщение что все ок
+    std::cout << "[GridBuilder] Built mesh: " << nx << "x" << ny << "x" << nz 
+              << " (Vertices: " << vertices.size() / 3 << ")" << std::endl;
     return vertices;
 }
