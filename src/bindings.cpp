@@ -7,6 +7,7 @@
 #include "stl_exporter/stl_exporter.hpp"
 #include "ply_exporter/ply_exporter.hpp"
 #include "vtu_exporter/vtu_exporter.hpp"
+#include "vtk_exporter/vtk_exporter.hpp"
 
 namespace py = pybind11;
 //пайбинд11 позволяет сделать ручки моих си++ классов в питоне
