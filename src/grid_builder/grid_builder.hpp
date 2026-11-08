@@ -13,6 +13,6 @@ public:
         const std::vector<float>& coords,
         const std::vector<float>& zcorn,
         const std::vector<float>& actnum = {}, 
-        float z_scale = 1.0f                   
+            float z_scale = 1.0f                   
     );
 };

@@ -1,22 +1,40 @@
-cmake_minimum_required(VERSION 3.15)
-project(grdecl_to_obj LANGUAGES CXX)
-
-if(POLICY CMP0148)
-    cmake_policy(SET CMP0148 NEW)
-endif()
+cmake_minimum_required(VERSION 3.16)
+project(grdecl_viewer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON) # Автоматическая обработка сигналов/слотов Qt
 
-find_package(pybind11 REQUIRED)
+# Ищем библиотеки
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(VTK REQUIRED COMPONENTS 
+    CommonCore 
+    CommonDataModel 
+    RenderingCore 
+    RenderingOpenGL2 
+    InteractionStyle 
+    GUISupportQt
+)
 
-pybind11_add_module(grdecl_core 
-    src/bindings.cpp 
-    src/parser/parser.cpp
-    src/grid_builder/grid_builder.cpp
-    src/obj_exporter/obj_exporter.cpp
-    src/stl_exporter/stl_exporter.cpp
-    src/ply_exporter/ply_exporter.cpp
-    src/vtu_exporter/vtu_exporter.cpp
-    src/vtk_exporter/vtk_exporter.cpp
+# Подключаем наш src
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
+# Собираем все cpp файлы из src
+file(GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp")
+
+add_executable(grdecl_viewer 
+    main.cpp 
+    ${SRC_FILES}
+)
+
+# Линкуем Qt и VTK
+target_link_libraries(grdecl_viewer PRIVATE 
+    Qt6::Widgets 
+    ${VTK_LIBRARIES}
+)
+
+# Это нужно для того, чтобы VTK понимал Qt (в новых версиях VTK)
+vtk_module_autoinit(
+    TARGETS grdecl_viewer
+    MODULES ${VTK_LIBRARIES}
 )
