@@ -1,6 +1,6 @@
-#эта часть кода была нагло написана ЛЛМ Гемнини 3.5, тк я знаю только класический Си
+# эта часть кода была нагло написана ЛЛМ Гемнини 3.5, тк я знаю только класический Си
 # даже плюсы не очень, а проект делать надо (может потом на ГТК4 сделаю, но пока на PyQt6)
-#ядро на си++ писал почти сам, иногда подглядывая к нейронкам(я все равно не вайбкодер)
+# ядро на си++ писал почти сам, иногда подглядывая к нейронкам(я все равно не вайбкодер)
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QFileDialog, QMessageBox
 from pyvistaqt import QtInteractor
@@ -11,7 +11,7 @@ import numpy as np
 try:
     import grdecl_core
 except ImportError:
-    print("[-] Error: grdecl_to_obj module not found. Compile the C++ backend first!")
+    print("[-] Error: grdecl_core module not found. Compile the C++ backend first!")
     sys.exit(1)
 
 class MainWindow(QMainWindow):
@@ -38,15 +38,29 @@ class MainWindow(QMainWindow):
         self.btn_load.clicked.connect(self.open_file_dialog)
         sidebar_layout.addWidget(self.btn_load)
 
-        # Кнопка экспорта в OBJ
+        # --- Кнопки экспорта ---
+        # Теперь все они вызывают один и тот же метод _export_format, но с разными аргументами
+        
         self.btn_export_obj = QPushButton("Экспортировать в .OBJ", sidebar)
-        self.btn_export_obj.clicked.connect(self.export_obj_file)
+        self.btn_export_obj.clicked.connect(lambda: self._export_format("OBJ"))
         sidebar_layout.addWidget(self.btn_export_obj)
 
-        # Кнопка экспорта в STL
+        self.btn_export_ply = QPushButton("Экспортировать в .PLY", sidebar)
+        self.btn_export_ply.clicked.connect(lambda: self._export_format("PLY"))
+        sidebar_layout.addWidget(self.btn_export_ply)
+
+        self.btn_export_vtk = QPushButton("Экспортировать в .VTK", sidebar)
+        self.btn_export_vtk.clicked.connect(lambda: self._export_format("VTK"))
+        sidebar_layout.addWidget(self.btn_export_vtk)
+
+        self.btn_export_vtu = QPushButton("Экспортировать в .VTU", sidebar)
+        self.btn_export_vtu.clicked.connect(lambda: self._export_format("VTU"))
+        sidebar_layout.addWidget(self.btn_export_vtu)
+
         self.btn_export_stl = QPushButton("Экспортировать в .STL", sidebar)
-        self.btn_export_stl.clicked.connect(self.export_stl_file)
+        self.btn_export_stl.clicked.connect(lambda: self._export_format("STL"))
         sidebar_layout.addWidget(self.btn_export_stl)
+
         sidebar_layout.addStretch()
         layout.addWidget(sidebar)
 
@@ -122,51 +136,56 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Критическая ошибка", f"Ошибка при обработке файла:\n{str(e)}")
 
-    def export_obj_file(self):
+    def _export_format(self, fmt: str):
+        """Единая функция для экспорта во все поддерживаемые форматы"""
         if not self.current_dims:
             QMessageBox.warning(self, "Предупреждение", "Сначала откройте валидный .grdecl файл!")
             return
 
+        # Словарь с фильтрами для диалогового окна сохранения
+        filters = {
+            "OBJ": "Wavefront OBJ (*.obj);;All Files (*)",
+            "STL": "STL (*.stl);;All Files (*)",
+            "PLY": "PLY (*.ply);;All Files (*)",
+            "VTK": "Legacy VTK (*.vtk);;All Files (*)",
+            "VTU": "XML VTK (*.vtu);;All Files (*)",
+        }
+
+        if fmt not in filters:
+            return
+
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Сохранить модель как OBJ", "", "Wavefront OBJ (*.obj);;All Files (*)"
+            self, f"Сохранить модель как {fmt}", "", filters[fmt]
         )
         if not file_path:
             return
 
         try:
+            # 1. Считаем геометрию в C++ бэкенде (один раз для всех)
             raw_vertices = grdecl_core.GridBuilder.build_mesh_grid(
                 self.current_dims, self.current_coords, self.current_zcorn
             )
-            success = grdecl_core.ObjExporter.export_to_obj(file_path, raw_vertices)
             
+            # 2. Вызываем нужный экспортер в зависимости от формата
+            if fmt == "OBJ":
+                success = grdecl_core.ObjExporter.export_to_obj(file_path, raw_vertices)
+            elif fmt == "STL":
+                success = grdecl_core.StlExporter.export_to_stl(file_path, raw_vertices)
+            elif fmt == "PLY":
+                success = grdecl_core.PlyExporter.export_to_ply(file_path, raw_vertices)
+            elif fmt == "VTK":
+                success = grdecl_core.VtkExporter.export_to_vtk(file_path, raw_vertices)
+            elif fmt == "VTU":
+                success = grdecl_core.VtuExporter.export_to_vtu(file_path, raw_vertices)
+            else:
+                success = False
+
+            # 3. Показываем результат пользователю
             if success:
                 QMessageBox.information(self, "Успех", f"Модель успешно сохранена:\n{file_path}")
             else:
-                QMessageBox.critical(self, "Ошибка", "Не удалось записать .obj файл.")
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка экспорта: {str(e)}")
-
-    def export_stl_file(self):
-        if not self.current_dims:
-            QMessageBox.warning(self, "Предупреждение", "Сначала откройте валидный .grdecl файл!")
-            return
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Сохранить модель как STL", "", "STL (*.stl);;All Files (*)"
-        )
-        if not file_path:
-            return
-
-        try:
-            raw_vertices = grdecl_core.GridBuilder.build_mesh_grid(
-                self.current_dims, self.current_coords, self.current_zcorn
-            )
-            success = grdecl_core.StlExporter.export_to_stl(file_path, raw_vertices)
-
-            if success:
-                QMessageBox.information(self, "Успех", f"Модель успешно сохранена:\n{file_path}")
-            else:
-                QMessageBox.critical(self, "Ошибка", "Не удалось записать .stl файл.")
+                QMessageBox.critical(self, "Ошибка", f"Не удалось записать .{fmt.lower()} файл.")
+                
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Ошибка экспорта: {str(e)}")
 
