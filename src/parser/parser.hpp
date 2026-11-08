@@ -18,7 +18,9 @@ class Parser {
     std::vector<float> parse_keyword(const std::string& keyword) const; /*возвращает массив чисел для любого ключевого слова
     с учетом RLE-декомпрессии*/
     private:
-    std::string file_path;
-    std::string file_content;
-
+        std::string file_path;
+        std::string file_content;
+    
+        bool read_file_and_resolve_includes(const std::string& cur_path,
+            std::string& out_content);
 };
