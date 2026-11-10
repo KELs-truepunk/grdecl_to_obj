@@ -6,6 +6,7 @@ bool ObjExporter::export_optimized_obj(
     const std::string& filepath,
     const std::vector<float>& raw_vertices,
     const std::vector<int>& dims,
+    const std::vector<float>& actnum, 
     bool add_base_plate,
     float base_thickness) 
 {
@@ -14,11 +15,8 @@ bool ObjExporter::export_optimized_obj(
     int nx = dims[0], ny = dims[1], nz = dims[2];
     ObjMesh mesh;
 
-    // Карта для уникальных вершин (чтобы не дублировать точки в OBJ)
     std::map<std::string, int> unique_vertices;
-    
     auto get_vertex_index = [&](float x, float y, float z) {
-        // Округляем до 4 знаков, чтобы избежать ошибок float
         std::string key = std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z);
         if (unique_vertices.find(key) == unique_vertices.end()) {
             int new_idx = mesh.vertices.size() / 3;
@@ -30,66 +28,73 @@ bool ObjExporter::export_optimized_obj(
         return unique_vertices[key];
     };
 
-    int num_cells = raw_vertices.size() / 24;
-    
-    auto has_neighbor = [&](int i, int j, int k, int di, int dj, int dk) {
-        int ni = i + di, nj = j + dj, nk = k + dk;
-        if (ni >= 0 && ni < nx && nj >= 0 && nj < ny && nk >= 0 && nk < nz) return true;
-        return false;
+    // Вспомогательная лямбда: активна ли ячейка?
+    auto is_active = [&](int i, int j, int k) {
+        if (i < 0 || i >= nx || j < 0 || j >= ny || k < 0 || k >= nz) return false;
+        int idx = (k * ny + j) * nx + i;
+        if (!actnum.empty() && idx < actnum.size()) {
+            return actnum[idx] >= 0.5f;
+        }
+        return true; // Если actnum пустой, считаем все ячейки активными
     };
 
-    // Проходим по всем ячейкам (порядок k, j, i как в GridBuilder)
+    int active_vertex_ptr = 0; // Счетчик для сырых вершин (только активные ячейки)
+
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
             for (int i = 0; i < nx; ++i) {
-                int cell_idx = (k * ny + j) * nx + i;
                 
-                // Проверка: если ячейка вылетела за пределы массива (т.к. мы пропускали ACTNUM)
-                // В сыром массиве вершин остались только активные ячейки. 
-                // Это косяк передачи сырых вершин, но для простоты пока считаем, что сетка полная.
-                if (cell_idx * 8 >= raw_vertices.size()) continue;
+                if (!is_active(i, j, k)) continue; // Пропускаем мертвые ячейки
 
-                int base_v = cell_idx * 8; 
+                int base_v = active_vertex_ptr * 24; 
+                active_vertex_ptr++;
 
-                // Извлекаем 8 вершин текущей ячейки
+                // Проверка на всякий случай, чтобы не вылететь
+                if (base_v + 23 >= raw_vertices.size()) break;
+
                 std::array<int, 8> v;
                 for (int idx = 0; idx < 8; ++idx) {
                     v[idx] = get_vertex_index(
-                        raw_vertices[base_v*3 + idx*3], 
-                        raw_vertices[base_v*3 + idx*3 + 1], 
-                        raw_vertices[base_v*3 + idx*3 + 2]
+                        raw_vertices[base_v + idx*3], 
+                        raw_vertices[base_v + idx*3 + 1], 
+                        raw_vertices[base_v + idx*3 + 2]
                     );
                 }
 
+                // Проверяем соседей (используем лямбду is_active)
+                auto has_active_neighbor = [&](int di, int dj, int dk) {
+                    return is_active(i + di, j + dj, k + dk);
+                };
+
                 bool draw_bottom = !(add_base_plate && k == 0);
 
-                // Верх (нет соседа сверху)
-                if (!has_neighbor(i, j, k, 0, 0, 1)) {
+                // Верх
+                if (!has_active_neighbor(0, 0, 1)) {
                     mesh.faces.push_back({v[0], v[3], v[2]});
                     mesh.faces.push_back({v[0], v[2], v[1]});
                 }
-                // Низ (нет соседа снизу)
-                if (draw_bottom && !has_neighbor(i, j, k, 0, 0, -1)) {
+                // Низ
+                if (draw_bottom && !has_active_neighbor(0, 0, -1)) {
                     mesh.faces.push_back({v[4], v[5], v[6]});
                     mesh.faces.push_back({v[4], v[6], v[7]});
                 }
-                // Перед (нет соседа спереди)
-                if (!has_neighbor(i, j, k, 0, -1, 0)) {
+                // Перед
+                if (!has_active_neighbor(0, -1, 0)) {
                     mesh.faces.push_back({v[0], v[1], v[5]});
                     mesh.faces.push_back({v[0], v[5], v[4]});
                 }
-                // Право (нет соседа справа)
-                if (!has_neighbor(i, j, k, 1, 0, 0)) {
+                // Право
+                if (!has_active_neighbor(1, 0, 0)) {
                     mesh.faces.push_back({v[1], v[2], v[6]});
                     mesh.faces.push_back({v[1], v[6], v[5]});
                 }
-                // Зад (нет соседа сзади)
-                if (!has_neighbor(i, j, k, 0, 1, 0)) {
+                // Зад
+                if (!has_active_neighbor(0, 1, 0)) {
                     mesh.faces.push_back({v[2], v[3], v[7]});
                     mesh.faces.push_back({v[2], v[7], v[6]});
                 }
-                // Лево (нет соседа слева)
-                if (!has_neighbor(i, j, k, -1, 0, 0)) {
+                // Лево
+                if (!has_active_neighbor(-1, 0, 0)) {
                     mesh.faces.push_back({v[3], v[0], v[4]});
                     mesh.faces.push_back({v[3], v[4], v[7]});
                 }
@@ -97,8 +102,8 @@ bool ObjExporter::export_optimized_obj(
         }
     }
 
-    // --- ДОБАВЛЕНИЕ ПОДЛОЖКИ ---
-    if (add_base_plate) {
+    // --- Подложка ---
+    if (add_base_plate && !mesh.vertices.empty()) {
         float min_x = 1e9, max_x = -1e9, min_y = 1e9, max_y = -1e9, min_z = 1e9;
         for (size_t i = 0; i < mesh.vertices.size(); i += 3) {
             min_x = std::min(min_x, mesh.vertices[i]);     max_x = std::max(max_x, mesh.vertices[i]);
@@ -116,18 +121,14 @@ bool ObjExporter::export_optimized_obj(
         int b2 = get_vertex_index(max_x, max_y, min_z - base_thickness);
         int b3 = get_vertex_index(min_x, max_y, min_z - base_thickness);
 
-        // Верх подложки
         mesh.faces.push_back({p0, p1, p2}); mesh.faces.push_back({p0, p2, p3});
-        // Низ подложки
         mesh.faces.push_back({b0, b3, b2}); mesh.faces.push_back({b0, b2, b1});
-        // Стенки
         mesh.faces.push_back({p0, b0, b1}); mesh.faces.push_back({p0, b1, p1});
         mesh.faces.push_back({p1, b1, b2}); mesh.faces.push_back({p1, b2, p2});
         mesh.faces.push_back({p2, b2, b3}); mesh.faces.push_back({p2, b3, p3});
         mesh.faces.push_back({p3, b3, b0}); mesh.faces.push_back({p3, b0, p0});
     }
 
-    // Запись в файл
     std::ofstream file(filepath);
     if (!file.is_open()) return false;
 

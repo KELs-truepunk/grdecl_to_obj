@@ -6,10 +6,10 @@
 #include <QMessageBox>
 #include <iostream>
 
-// Подключаем твое C++ ядро!
+// Подключаем ядро!
 #include "parser/parser.hpp"
 #include "grid_builder/grid_builder.hpp"
-#include "obj_exporter/obj_exporter.hpp" // Если используешь новый умный экспортер
+#include "obj_exporter/obj_exporter.hpp" 
 
 // VTK
 #include <vtkProperty.h>
@@ -178,7 +178,38 @@ void MainWindow::export_obj() {
         QMessageBox::warning(this, "Предупреждение", "Сначала откройте файл!");
         return;
     }
-    
-    // Заглушка, чтобы ты проверил, что класс работает
-    QMessageBox::information(this, "Экспорт", "Функция экспорта будет добавлена на следующем шаге!");
+
+    QString filePath = QFileDialog::getSaveFileName(this, "Сохранить как OBJ", "", "Wavefront OBJ (*.obj);;All Files (*)");
+    if (filePath.isEmpty()) return;
+
+    try {
+        float zVal = zScaleSpin->value();
+        
+        // Считаем сырые данные
+        auto raw_vertices = GridBuilder::build_mesh_grid(current_dims, current_coords, current_zcorn, current_actnum, zVal);
+
+        if (raw_vertices.empty()) {
+            QMessageBox::warning(this, "Ошибка", "Нет данных для экспорта.");
+            return;
+        }
+
+        // Вызываем новый умный экспортер
+        // add_base = true, base_thickness = 10.0f
+        bool success = ObjExporter::export_optimized_obj(
+            filePath.toStdString(), 
+            raw_vertices, 
+            current_dims, 
+            current_actnum,
+            true,   // Добавлять подложку
+            10.0f   // Толщина подложки
+        );
+
+        if (success) {
+            QMessageBox::information(this, "Успех", "Модель успешно сохранена как  OBJ!");
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось записать файл.");
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Ошибка", QString("Ошибка экспорта: %1").arg(e.what()));
+    }
 }
