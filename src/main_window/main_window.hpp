@@ -17,16 +17,18 @@ public:
 private slots:
     void open_file_dialog();
     void refresh_3d_view();
+    void open_parameters_dialog();
     void export_obj(); 
 
 private:
     void setup_ui();
     void show_welcome_box();
-
+    bool has_fluids = false; 
     std::vector<int> current_dims;
     std::vector<float> current_coords;
     std::vector<float> current_zcorn;
     std::vector<float> current_actnum;
+    std::vector<float> current_fluids; 
 
     QVTKOpenGLNativeWidget* vtkWidget;
     vtkSmartPointer<vtkRenderer> renderer;
