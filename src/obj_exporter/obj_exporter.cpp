@@ -10,11 +10,13 @@ bool ObjExporter::export_optimized_obj(
     bool add_base_plate,
     float base_thickness) 
 {
+    // Без координат или размеров сетки невозможно сопоставить вершины ячейкам.
     if (raw_vertices.empty() || dims.size() < 3) return false;
 
     int nx = dims[0], ny = dims[1], nz = dims[2];
     ObjMesh mesh;
 
+    // Соседние ячейки делят общие углы; сохраняем каждую уникальную координату один раз.
     std::map<std::string, int> unique_vertices;
     auto get_vertex_index = [&](float x, float y, float z) {
         std::string key = std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z);
@@ -38,7 +40,8 @@ bool ObjExporter::export_optimized_obj(
         return true; // Если actnum пустой, считаем все ячейки активными
     };
 
-    int active_vertex_ptr = 0; // Счетчик для сырых вершин (только активные ячейки)
+    // В raw_vertices находятся только активные ячейки, поэтому ведём отдельный индекс.
+    int active_vertex_ptr = 0;
 
     for (int k = 0; k < nz; ++k) {
         for (int j = 0; j < ny; ++j) {
@@ -66,6 +69,7 @@ bool ObjExporter::export_optimized_obj(
                     return is_active(i + di, j + dj, k + dk);
                 };
 
+                // При наличии подложки нижние грани первого слоя будут закрыты ею.
                 bool draw_bottom = !(add_base_plate && k == 0);
 
                 // Верх
@@ -102,7 +106,7 @@ bool ObjExporter::export_optimized_obj(
         }
     }
 
-    // --- Подложка ---
+    // При необходимости добавляем под сеткой прямоугольную подложку заданной толщины.
     if (add_base_plate && !mesh.vertices.empty()) {
         float min_x = 1e9, max_x = -1e9, min_y = 1e9, max_y = -1e9, min_z = 1e9;
         for (size_t i = 0; i < mesh.vertices.size(); i += 3) {
@@ -129,6 +133,7 @@ bool ObjExporter::export_optimized_obj(
         mesh.faces.push_back({p3, b3, b0}); mesh.faces.push_back({p3, b0, p0});
     }
 
+    // OBJ хранит вершины отдельно, а грани ссылаются на них с индексацией от единицы.
     std::ofstream file(filepath);
     if (!file.is_open()) return false;
 

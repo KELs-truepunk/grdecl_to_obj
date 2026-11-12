@@ -14,6 +14,7 @@ Parser::Parser(const std::string path) : file_path(std::move(path)) {}
 
 bool Parser::load(){
     file_content.clear();
+    // Загружаем основной файл вместе с содержимым всех подключённых INCLUDE-файлов.
     return read_file_and_resolve_includes(file_path, file_content);
 }
 
@@ -78,6 +79,7 @@ std::vector<int> Parser::get_specgrid() const {
 
     if (pos == std::string::npos) return {}; 
     
+    // После SPECGRID читаем три размера до завершающего слэша.
     std::stringstream ss(file_content.substr(pos + 8)); 
     std::string token;
     std::vector<int> dims;
@@ -110,6 +112,7 @@ std::vector<float> Parser::parse_keyword(const std::string& keyword) const {
 
     if (pos == std::string::npos) return data; 
     
+    // Читаем значения до слэша; запись вида «число*значение» раскрываем в отдельные элементы.
     std::stringstream ss(file_content.substr(pos + keyword.length())); 
     std::string token;
     while (ss >> token){

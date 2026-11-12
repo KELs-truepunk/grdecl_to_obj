@@ -3,7 +3,7 @@
 #include <iostream>
 
 bool ObjExporterLegacy::export_to_obj(const std::string& filepath, const std::vector<float>& vertices) {
-    // Проверка на корректность данных
+    // На каждую ячейку приходится восемь вершин с тремя координатами.
     if (vertices.empty() || vertices.size() % 24 != 0) {
         std::cerr << "[-] ObjExporter: Invalid or empty vertices vector." << std::endl;
         return false;
@@ -25,8 +25,7 @@ bool ObjExporterLegacy::export_to_obj(const std::string& filepath, const std::ve
         file << "v " << vertices[i] << " " << vertices[i + 1] << " " << vertices[i + 2] << "\n";
     }
 
-    // Локальные индексы граней гексаэдра в VTK/Eclipse порядке (0-based для OBJ идет с 1)
-    // Граневые индексы (6 граней по 4 вершины)
+    // Локальные индексы шести четырёхугольных граней в порядке обхода вершин ячейки.
     int faces[6][4] = {
         {0, 3, 2, 1}, // Верх
         {4, 5, 6, 7}, // Низ
@@ -36,7 +35,7 @@ bool ObjExporterLegacy::export_to_obj(const std::string& filepath, const std::ve
         {3, 0, 4, 7}  // Лево
     };
 
-    // Записываем грани для каждой ячейки
+    // Для каждой ячейки переводим локальные индексы в общие индексы OBJ.
     for (int c = 0; c < num_cells; ++c) {
         int base_v_idx = c * 8 + 1; // OBJ индексация начинается с 1
         // Записываем 6 граней ячейки

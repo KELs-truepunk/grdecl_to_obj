@@ -4,12 +4,12 @@
 #include <string>
 
 bool PlyExporter::export_to_ply(const std::string& filepath, const std::vector<float>& vertices, bool binary) {
-    // Проверка на пустой вектор вершин
+    // Входной массив должен содержать как минимум одну ячейку из восьми вершин.
     if (vertices.empty() || vertices.size() % 24 != 0) {
         std::cerr << "[-] PlyExporter: Invalid or empty vertices vector." << std::endl;
         return false;
     }
-    //открываем файл
+    // Файл открывается в бинарном режиме, чтобы поддержать и текстовую, и двоичную запись.
     std::ofstream file(filepath, std::ios::binary);
     if (!file.is_open()){
         std::cerr << "[-] PlyExporter: Could not open file: " << filepath << std::endl;
@@ -19,7 +19,7 @@ bool PlyExporter::export_to_ply(const std::string& filepath, const std::vector<f
     const int num_verts = static_cast<int>(vertices.size() / 3);
     const int num_faces = num_cells * 6;
     
-    //Заголовок файла:
+    // В заголовке описаны формат файла, вершины и четыре индекса каждой грани.
     file << "ply \n";
     file << (binary ? "format binary_little_endian 1.0\n" : "format ascii 1.0\n");
     file << "element vertex " << num_verts << "\n";
@@ -30,7 +30,7 @@ bool PlyExporter::export_to_ply(const std::string& filepath, const std::vector<f
     file << "property list uchar int vertex_indices\n";
     file << "end_header\n";
 
-    //Вертисы
+    // Координаты точек следуют сразу за заголовком.
     if (binary) {
         for (float v : vertices) {
             file.write(reinterpret_cast<const char*>(&v), sizeof(float));
@@ -51,6 +51,7 @@ bool PlyExporter::export_to_ply(const std::string& filepath, const std::vector<f
         {3, 0, 4, 7}   // лево
     };
 
+    // Каждую грань четырёхугольной ячейки записываем четырьмя индексами вершин.
     for (int c = 0; c < num_cells; ++c) {
         const int base = c * 8;
         for (int f = 0; f < 6; ++f) {

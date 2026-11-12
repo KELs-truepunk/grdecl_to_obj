@@ -27,10 +27,9 @@ static Vector3 compute_normal(const Vector3& p1, const Vector3& p2, const Vector
     return n;
 }
 
-
 bool StlExporter::export_to_stl(const std::string& filepath,
     std::vector<float>& vertices) {
-    // Проверяем, что вектор вершин не пуст и его размер кратен 24 
+    // На одну ячейку должны приходиться 8 вершин, по 3 координаты у каждой.
     if (vertices.empty() || vertices.size() % 24 != 0) {
         std::cerr << "[-] StlExporter: Invalid or empty vertices vector." << std::endl;
         return false;
@@ -44,11 +43,10 @@ bool StlExporter::export_to_stl(const std::string& filepath,
     }
 
     file << "solid ReservoirModel\n";
-    // количество ячеек 
+    // Каждая грань гексаэдра станет двумя треугольниками в STL.
     int num_cells = vertices.size() / 24;
 
-    // индексы 6 граней гексаэдра, разбитые на пары треугольников (всего 12 треугольников на ячейку)
-    // каждая четверка вершин граней разбивается на (0, 1, 2) и (0, 2, 3)
+    // Индексы четырёх углов каждой из шести граней в порядке обхода.
     int faces[6][4] = {
         {0, 3, 2, 1}, // Верх
         {4, 5, 6, 7}, // Низ
@@ -57,7 +55,7 @@ bool StlExporter::export_to_stl(const std::string& filepath,
         {2, 3, 7, 6}, // Зад
         {3, 0, 4, 7}  // Лево
     };
-    // Проходим по каждой ячейке и записываем ее грани в STL
+    // Для каждой ячейки извлекаем грани и записываем их треугольники.
     for (int c = 0; c < num_cells; ++c) {
         const float* cell_v = &vertices[c * 24];
         // Проходим по каждой из 6 граней ячейки
@@ -70,7 +68,7 @@ bool StlExporter::export_to_stl(const std::string& filepath,
                 pts[v] = {cell_v[idx], cell_v[idx + 1], cell_v[idx + 2]};
             }
 
-            // Разбиваем четырехугольник на 2 треугольника: (0, 1, 2) и (0, 2, 3)
+            // Диагональ делит четырёхугольник на два треугольника.
             int tri_indices[2][3] = {
                 {0, 1, 2},
                 {0, 2, 3}
@@ -93,7 +91,7 @@ bool StlExporter::export_to_stl(const std::string& filepath,
             }
         }
     }
-    // закрываем STL файл
+    // Закрываем STL-модель и завершаем запись.
     file << "endsolid ReservoirModel\n";
     file.close();
     
