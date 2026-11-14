@@ -20,7 +20,12 @@ private slots:
     void open_file_dialog();
     void refresh_3d_view();
     void open_parameters_dialog();
+    //экспорт кнопки
     void export_obj(); 
+    void export_stl();
+    void export_ply();
+    void export_vtk();
+    void export_vtu();
 
 private:
     void setup_ui();

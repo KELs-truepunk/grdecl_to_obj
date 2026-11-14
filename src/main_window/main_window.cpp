@@ -6,10 +6,14 @@
 #include <QMessageBox>
 #include <iostream>
 
-// Парсер читает исходные данные, построитель собирает сетку, экспортёр сохраняет её в OBJ.
 #include "parser/parser.hpp"
 #include "grid_builder/grid_builder.hpp"
+
 #include "obj_exporter/obj_exporter.hpp" 
+#include "stl_exporter/stl_exporter.hpp"
+#include "ply_exporter/ply_exporter.hpp"
+#include "vtk_exporter/vtk_exporter.hpp"
+#include "vtu_exporter/vtu_exporter.hpp"
 
 // Компоненты VTK отвечают за построение и отображение трёхмерной сетки.
 #include <vtkProperty.h>
@@ -61,6 +65,22 @@ void MainWindow::setup_ui() {
     QPushButton* btnExport = new QPushButton("Экспорт в .OBJ", sidebar);
     connect(btnExport, &QPushButton::clicked, this, &MainWindow::export_obj);
     sidebarLayout->addWidget(btnExport);
+
+    QPushButton* btnExportStl = new QPushButton("Экспорт в .STL", sidebar);
+    connect(btnExportStl, &QPushButton::clicked, this, &MainWindow::export_stl);
+    sidebarLayout->addWidget(btnExportStl);
+
+    QPushButton* btnExportPly = new QPushButton("Экспорт в .PLY", sidebar);
+    connect(btnExportPly, &QPushButton::clicked, this, &MainWindow::export_ply);
+    sidebarLayout->addWidget(btnExportPly);
+
+    QPushButton* btnExportVtk = new QPushButton("Экспорт в .VTK", sidebar);
+    connect(btnExportVtk, &QPushButton::clicked, this, &MainWindow::export_vtk);
+    sidebarLayout->addWidget(btnExportVtk);
+
+    QPushButton* btnExportVtu = new QPushButton("Экспорт в .VTU", sidebar);
+    connect(btnExportVtu, &QPushButton::clicked, this, &MainWindow::export_vtu);
+    sidebarLayout->addWidget(btnExportVtu);
 
     statusLabel = new QLabel("Модель не загружена", sidebar);
     statusLabel->setWordWrap(true);
@@ -283,5 +303,81 @@ void MainWindow::export_obj() {
         }
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Ошибка", QString("Ошибка экспорта: %1").arg(e.what()));
+    }
+}
+
+void MainWindow::export_stl() {
+    if (current_dims.empty()) return;
+    QString filePath = QFileDialog::getSaveFileName(this, "Сохранить как STL", "", "STL (*.stl);;All Files (*)");
+    if (filePath.isEmpty()) return;
+
+    try {
+        float zVal = zScaleSpin->value();
+        auto mesh = GridBuilder::build_mesh_grid(current_dims, current_coords, current_zcorn, current_actnum, current_fluids, zVal);
+        
+        if (StlExporter::export_to_stl(filePath.toStdString(), mesh.vertices)) {
+            QMessageBox::information(this, "Успех", "Сохранено в STL!");
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось сохранить STL.");
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Ошибка", e.what());
+    }
+}
+
+void MainWindow::export_ply() {
+    if (current_dims.empty()) return;
+    QString filePath = QFileDialog::getSaveFileName(this, "Сохранить как PLY", "", "PLY (*.ply);;All Files (*)");
+    if (filePath.isEmpty()) return;
+
+    try {
+        float zVal = zScaleSpin->value();
+        auto mesh = GridBuilder::build_mesh_grid(current_dims, current_coords, current_zcorn, current_actnum, current_fluids, zVal);
+        
+        if (PlyExporter::export_to_ply(filePath.toStdString(), mesh.vertices)) {
+            QMessageBox::information(this, "Успех", "Сохранено в PLY!");
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось сохранить PLY.");
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Ошибка", e.what());
+    }
+}
+
+void MainWindow::export_vtk() {
+    if (current_dims.empty()) return;
+    QString filePath = QFileDialog::getSaveFileName(this, "Сохранить как VTK", "", "Legacy VTK (*.vtk);;All Files (*)");
+    if (filePath.isEmpty()) return;
+
+    try {
+        float zVal = zScaleSpin->value();
+        auto mesh = GridBuilder::build_mesh_grid(current_dims, current_coords, current_zcorn, current_actnum, current_fluids, zVal);
+        
+        if (VtkExporter::export_to_vtk(filePath.toStdString(), mesh.vertices)) {
+            QMessageBox::information(this, "Успех", "Сохранено в VTK!");
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось сохранить VTK.");
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Ошибка", e.what());
+    }
+}
+
+void MainWindow::export_vtu() {
+    if (current_dims.empty()) return;
+    QString filePath = QFileDialog::getSaveFileName(this, "Сохранить как VTU", "", "XML VTK (*.vtu);;All Files (*)");
+    if (filePath.isEmpty()) return;
+
+    try {
+        float zVal = zScaleSpin->value();
+        auto mesh = GridBuilder::build_mesh_grid(current_dims, current_coords, current_zcorn, current_actnum, current_fluids, zVal);
+        
+        if (VtuExporter::export_to_vtu(filePath.toStdString(), mesh.vertices)) {
+            QMessageBox::information(this, "Успех", "Сохранено в VTU!");
+        } else {
+            QMessageBox::critical(this, "Ошибка", "Не удалось сохранить VTU.");
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Ошибка", e.what());
     }
 }

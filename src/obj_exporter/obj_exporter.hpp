@@ -13,7 +13,7 @@ public:
         const std::string& filepath,
         const std::vector<float>& raw_vertices,
         const std::vector<int>& dims,
-        const std::vector<float>& actnum, // <--- ДОБАВЛЕНО
+        const std::vector<float>& actnum,
         bool add_base_plate = false,
         float base_thickness = 5.0f
     );
